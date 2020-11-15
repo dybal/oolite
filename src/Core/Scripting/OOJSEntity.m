@@ -339,6 +339,9 @@ static JSBool EntitySetProperty(JSContext *context, JSObject *this, jsid propID,
 		case kEntity_orientation:
 			if (JSValueToQuaternion(context, *value, &qValue))
 			{
+				if (entity == PLAYER) {
+					OOLog(@"dybal.trace", @"%@ orientation set to %@", entity, qValue);
+				}
 				[entity setNormalOrientation:qValue];
 				return YES;
 			}
