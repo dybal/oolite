@@ -1224,7 +1224,7 @@ NSComparisonResult marketSorterByMassUnit(id a, id b, void *market);
 	
 	// ship depreciation
 	ship_trade_in_factor = [dict oo_floatForKey:@"ship_trade_in_factor" defaultValue:95];
-OOLog(@"dybal.trace", @"setCommanderDataFromDictionary: trade in %f", ship_trade_in_factor);
+
 	// newer savegames use galaxy_id
 	if ([dict oo_stringForKey:@"galaxy_id"] != nil)
 	{
@@ -6795,7 +6795,10 @@ OOLog(@"dybal.trace", @"setCommanderDataFromDictionary: trade in %f", ship_trade
 
 	if (killAward)
 	{
-OOLog(@"dybal.trace", @"Increasing player kills from %d to %d due to %@ destruction", ship_kills, ship_kills+1, [other displayName]);
+
+		OOLog(@"dybal.trace", @"Increasing player kills from %d to %d due to destruction of %@", ship_kills, ship_kills+1, [other displayName]);
+		ship_kills++;
+
 		ship_kills++;
 		if ((ship_kills % 256) == 0)
 		{
@@ -7551,7 +7554,9 @@ OOLog(@"dybal.trace", @"Increasing player kills from %d to %d due to %@ destruct
 	unsigned malfunc_chance = 253;
 	if (ship_trade_in_factor < 80)
 	{
-		malfunc_chance -= (1 + ranrot_rand() % (int)roundf(81.0-ship_trade_in_factor)) / 2;	// increase chance of misjump in worn-out craft
+
+		malfunc_chance -= (1 + ranrot_rand() % (int)ceil(81-ship_trade_in_factor)) / 2;	// increase chance of misjump in worn-out craft
+
 	}
 	else if (ship_trade_in_factor >= 99)
 	{
@@ -7653,11 +7658,22 @@ OOLog(@"dybal.trace", @"Increasing player kills from %d to %d due to %@ destruct
 	NSPoint destCoords = PointFromString([[UNIVERSE systemManager] getProperty:@"coordinates" forSystem:sTo inGalaxy:galaxy_number]);
 	double distance = distanceBetweenPlanetPositions(destCoords.x,destCoords.y,galaxy_coordinates.x,galaxy_coordinates.y);
 	
-	//wear and tear on all jumps (inc misjumps, failures, and wormholes)
-	float wear = 1 / (0.5 + pow(ship_trade_in_factor - 74, 0.6)) - 0.135;
-	float adjust = - wear * distance;
-	OOLog(@"dybal.trace", @"Taking %f from Service Level %f", adjust, ship_trade_in_factor);
-	[self adjustTradeInFactorBy:adjust];
+
+	// wear and tear on all jumps (inc misjumps, failures, and wormholes)
+	// wear factor increases non-linearly as ship_trad_in_factor get closer to minimun of 75
+	float wear_factor = 1 / (0.5 + pow(ship_trade_in_factor - 74, 0.6)) - 0.135;
+//	float a = ship_trade_in_factor - 74;
+//	float e = 0.6;
+//	float p = pow(a, e);
+//	float d = 0.5 + p;
+//	float i = 1 / d;
+//	float wear_factor = i - 0.135;
+	// jump wear is linearly proportional to jump distance (penalizes fast routes)
+	float jump_wear = - wear_factor * distance;
+//	OOLog(@"dybal.trace", @"a:%f, e:%f, p:%f, d:%f, i:%f, wf:%f, distance:%f, jump_wear:%f", a, e, p, d, i, wear_factor, distance, jump_wear);
+	OOLog(@"dybal.trace", @"Taking %f from Service Level %f", -jump_wear, ship_trade_in_factor);
+	[self adjustTradeInFactorBy:jump_wear];
+
 
 	// set clock after "playerWillEnterWitchspace" and before  removeAllEntitiesExceptPlayer, to allow escorts time to follow their mother. 
 	[UNIVERSE removeAllEntitiesExceptPlayer];
@@ -11727,7 +11743,9 @@ static NSString *last_outfitting_key=nil;
 
 - (int) tradeInFactor
 {
+
 	return (int) ship_trade_in_factor;
+
 }
 
 

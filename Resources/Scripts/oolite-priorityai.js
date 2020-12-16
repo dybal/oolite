@@ -1102,7 +1102,9 @@ PriorityAIController.prototype.oddsAssessment = function()
 				us += this.threatAssessment(ship,true);
 			}
 		}
+
 		if (group.leader && group.leader.group && group.leader.group != group)
+
 		{
 			gs = group.leader.group.ships;
 			// don't want escorts running off early
@@ -6845,4 +6847,3 @@ this._threatAssessment = function(ship,full)
 		return 0;
 	}
 }
-
